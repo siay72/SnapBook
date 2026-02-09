@@ -12,6 +12,11 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+from decouple import config
+import cloudinary
+import cloudinary.uploader
+from cloudinary.utils import cloudinary_url
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -45,13 +50,14 @@ INSTALLED_APPS = [
     'djoser',
     'debug_toolbar',
     'api',
-    'users'
+    'users',
+    'posts',
 
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -114,8 +120,11 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
 INTERNAL_IPS = [
+    # ...
     "127.0.0.1",
+    # ...
 ]
+
 
 LANGUAGE_CODE = 'en-us'
 
@@ -147,3 +156,20 @@ SIMPLE_JWT = {
 }
 
 
+cloudinary.config( 
+    cloud_name = config('cloudname'), 
+    api_key = config('cloudinary_api_key'), 
+    api_secret = config('cloudinary_api_secret'), # Click 'View API Keys' above to copy your API secret
+    secure=True
+)
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+
+
+DJOSER = {
+
+    'SERIALIZERS': {
+        'user_create': 'users.serializers.UserCreateSerializer',
+        'current_user': 'users.serializers.UserSerializer',
+    }
+}
