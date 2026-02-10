@@ -97,8 +97,12 @@ class PostViewSet(ModelViewSet):
         operation_description="Only owner or admin can delete the post.",
         responses={204: "No Content"}
     )
-    def destroy(self, request, *args, **kwargs):
-        return super().destroy(request, *args, **kwargs)
+    def perform_destroy(self, instance):
+        if not (self.request.user.is_staff or self.request.user.is_superuser):
+            if instance.user != self.request.user:
+                raise serializers.ValidationError("You do not have permission to delete this post.")
+
+        instance.delete()
 
     @swagger_auto_schema(
         operation_summary="Like a post",
@@ -109,7 +113,7 @@ class PostViewSet(ModelViewSet):
             )
         }
     )
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], serializer_class=EmptySerializer)
     def like(self, request, pk=None):
         post = self.get_object()
         user = request.user
@@ -132,7 +136,7 @@ class PostViewSet(ModelViewSet):
             )
         }
     )
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], serializer_class=EmptySerializer)
     def unlike(self, request, pk=None):
         post = self.get_object()
         user = request.user
