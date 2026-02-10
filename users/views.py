@@ -23,3 +23,5 @@ class UserProfileView(ModelViewSet):
     
     def destroy(self, request, *args, **kwargs):
         return Response({"detail": "Method 'DELETE' not allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    

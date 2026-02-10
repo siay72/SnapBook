@@ -19,6 +19,7 @@ class PostSerializer(serializers.ModelSerializer):
     total_likes = serializers.SerializerMethodField() 
     total_unlike = serializers.SerializerMethodField()
     image = serializers.ImageField(required=False)
+    user_email = serializers.EmailField(source='user.email', read_only=True)
 
     comments = CommentSerializer(many=True, read_only=True)
 
@@ -26,6 +27,7 @@ class PostSerializer(serializers.ModelSerializer):
         model = Post
         fields = [
             'id',
+            'user_email',
             'caption',
             'image',
             'video_url',
