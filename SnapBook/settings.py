@@ -209,6 +209,7 @@ DJOSER = {
 
 
 SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
     'SECURITY_DEFINITIONS': {
         'Bearer': {
             'type': 'apiKey',
@@ -216,5 +217,6 @@ SWAGGER_SETTINGS = {
             'in': 'header',
             'description': 'Enter your JWT token in the format: `JWT <your_token>`'
         }
-    }
+    },
+    'STATIC_URL': '/static/',
 }
