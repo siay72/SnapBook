@@ -4,7 +4,7 @@ from users.models import User
 
 class UserCreateSerializer(BaseUserCreateSerializer):
     class Meta(BaseUserCreateSerializer.Meta):
-        fields = ['id', 'email', 'password', 'first_name', 'last_name', 'location',  'phone_number']
+        fields = ['id', 'email', 'password', 'first_name', 'last_name', 'location',  'phone_number',]
 
 
 class UserSerializer(BaseUserSerializer):
@@ -16,5 +16,5 @@ class UserSerializer(BaseUserSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'email', 'first_name', 'last_name', 'location', 'phone_number']
+        fields = ['id', 'email', 'first_name', 'last_name', 'location', 'phone_number', 'profile_picture']
         read_only_fields = ['email']

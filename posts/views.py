@@ -19,7 +19,7 @@ class PostViewSet(ModelViewSet):
     serializer_class = PostSerializer
     parser_classes = [MultiPartParser, FormParser]
     filter_backends = [SearchFilter]
-    search_fields = ['caption', 'user__email']
+    search_fields = ['caption', 'user__email', 'user__first_name', 'user__last_name']
     pagination_class = DefaultPagination
     permission_classes = [IsAuthenticated]
 
