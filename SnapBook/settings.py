@@ -215,6 +215,7 @@ DJOSER = {
     'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}',
     'PASSWORD_RESET_URL': 'password/reset/{uid}/{token}',
     'SERIALIZERS': {
+        "user": "users.serializers.UserSerializer",
         'user_create': 'users.serializers.UserCreateSerializer',
         'current_user': 'users.serializers.UserSerializer',
     }
