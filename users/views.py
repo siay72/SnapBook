@@ -1,15 +1,18 @@
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
+from yaml import serializer
 from users.models import User
 from users.serializers import UserProfileSerializer
-from rest_framework import status
+from rest_framework import request, status
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.parsers import MultiPartParser, FormParser
 
 
 class UserProfileView(ModelViewSet):
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def get_queryset(self):
         # User can only access his own profile
@@ -35,8 +38,13 @@ class UserProfileView(ModelViewSet):
         }
     )
     def update(self, request, *args, **kwargs):
-        """Update profile details"""
-        return super().update(request, *args, **kwargs)
+        user = request.user
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data)
 
     @swagger_auto_schema(
         operation_summary="Partial update user profile",
