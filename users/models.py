@@ -19,7 +19,12 @@ class User(AbstractUser):
     ]
     location = models.CharField(max_length=20, choices=LOCATION_CHOICES, blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
-    profile_picture = CloudinaryField('image', blank=True, null=True)
+    profile_picture = CloudinaryField(
+        'profile_picture',
+        folder="snapbook/profile_pictures",
+        blank=True,
+        null=True
+    )
 
     USERNAME_FIELD = 'email'  # Use email instead of username
     REQUIRED_FIELDS = []

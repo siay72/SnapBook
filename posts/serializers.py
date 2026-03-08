@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Post, Comment
+from decouple import config
 
 
 class EmptySerializer(serializers.Serializer):
@@ -30,6 +31,7 @@ class CommentSerializer(serializers.ModelSerializer):
 # Post Serializer
 class PostSerializer(serializers.ModelSerializer):
 
+    user_profile_picture = serializers.SerializerMethodField()
     # Like / Unlike counters
     total_likes = serializers.SerializerMethodField()
     total_unlike = serializers.SerializerMethodField()
@@ -56,6 +58,7 @@ class PostSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'user_email',
+            "user_profile_picture",
             'user_first_name',
             'user_last_name',
             'caption',
@@ -71,7 +74,10 @@ class PostSerializer(serializers.ModelSerializer):
             'total_comments',
             'comments'
         ]
-
+    def get_user_profile_picture(self, obj):
+        if obj.user.profile_picture:
+            return obj.user.profile_picture.url
+        return None
 
     # Like count
     def get_total_likes(self, obj):
