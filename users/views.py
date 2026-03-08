@@ -31,6 +31,7 @@ class UserProfileView(ModelViewSet):
     @swagger_auto_schema(
         operation_summary="Update user profile",
         request_body=UserProfileSerializer,
+        consumes=["multipart/form-data"],
     )
     def update(self, request, *args, **kwargs):
 
@@ -48,6 +49,7 @@ class UserProfileView(ModelViewSet):
     @swagger_auto_schema(
         operation_summary="Partial update profile",
         request_body=UserProfileSerializer,
+        consumes=["multipart/form-data"],
     )
     def partial_update(self, request, *args, **kwargs):
 
