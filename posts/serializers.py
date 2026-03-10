@@ -10,6 +10,7 @@ class EmptySerializer(serializers.Serializer):
 # Comment Serializer
 class CommentSerializer(serializers.ModelSerializer):
 
+    user_profile_picture = serializers.SerializerMethodField()
     user_email = serializers.EmailField(source='user.email', read_only=True)
     user_id = serializers.IntegerField(source="user.id", read_only=True)
     user_first_name = serializers.CharField(source="user.first_name", read_only=True)
@@ -20,12 +21,17 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'text',
+            "user_profile_picture",
             'user_email',
             'user_id',
             'user_first_name',
             'user_last_name',
             'created_at'
         ]
+    def get_user_profile_picture(self, obj):
+        if obj.user.profile_picture:
+            return obj.user.profile_picture.url
+        return None
 
 
 # Post Serializer
@@ -121,4 +127,4 @@ class PaymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Payment
-        fields = ['id', 'user', 'order_id', 'transaction_id', 'created_at', 'updated_at',]
+        fields = ['id', 'user', 'order_id', 'transaction_id', 'created_at', 'amount', 'payment_method', 'status']

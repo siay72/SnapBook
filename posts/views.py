@@ -1,9 +1,11 @@
+from django.shortcuts import redirect
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
+from SnapBook.settings import FRONTEND_URL, BACKEND_URL
 from posts.models import Payment, Post,  Comment
 from posts.serializers import PostSerializer, CommentSerializer, EmptySerializer, PaymentSerializer
 from rest_framework import serializers
@@ -382,9 +384,9 @@ def initiate_payment(request):
     post_body['total_amount'] = ammount
     post_body['currency'] = "BDT"
     post_body['tran_id'] = f"txn_{order_id}"
-    post_body['success_url'] = "https://snap-book.vercel.app/api/payment/success"
-    post_body['fail_url'] = "https://snap-book-frontend.vercel.app/dashboard/payment-failure"
-    post_body['cancel_url'] = "https://snap-book-frontend.vercel.app/dashboard/payment-canceled"
+    post_body['success_url'] = f"{BACKEND_URL}/api/payment/success/"
+    post_body['fail_url'] = f"{BACKEND_URL}/api/payment/fail/"
+    post_body['cancel_url'] = f"{BACKEND_URL}/api/payment/cancel/"
     post_body['emi_option'] = 0
     post_body['cus_name'] = f"{user.first_name} {user.last_name}"
     post_body['cus_email'] = user.email
@@ -404,34 +406,37 @@ def initiate_payment(request):
  
 
     if response.get("status") == "SUCCESS":
-        return Response({"payment_url": response["GatewayPageURL"]}, status=status.HTTP_200_OK)
+        return Response({"payment_url": response["GatewayPageURL"]})
     
-    return Response({"error": "Failed to create payment session."}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"error": "Payment failed"})
 
 
 
     
-
 
 @api_view(["POST"])
 def payment_success(request):
 
-    tran_id = request.data.get("tran_id")
-    amount = request.data.get("amount")
-    payment_method = request.data.get("card_type")
+    tran_id = request.POST.get("tran_id")
+    amount = request.POST.get("amount")
+    payment_method = request.POST.get("card_type")
 
     order_id = tran_id.replace("txn_", "")
 
-    Payment.objects.create(
-        user=request.user,
-        order_id=order_id,
-        transaction_id=tran_id,
-        amount=amount,
-        payment_method=payment_method,
-        status="verified"
-    )
+    try:
+        payment = Payment.objects.get(order_id=order_id)
 
-    return Response({"message": "Payment recorded successfully"})
+        payment.transaction_id = tran_id
+        payment.amount = amount
+        payment.payment_method = payment_method
+        payment.status = "verified"
+        payment.save()
+
+    except Payment.DoesNotExist:
+        pass
+
+    return redirect(f"{FRONTEND_URL}/order-history")
+
 
 
 
@@ -443,3 +448,17 @@ class PaymentHistoryViewSet(ReadOnlyModelViewSet):
     def get_queryset(self):
 
         return Payment.objects.filter(user=self.request.user).order_by("-created_at")
+    
+
+
+
+@api_view(["POST"])
+def payment_cancel(request):
+    return redirect(f"{FRONTEND_URL}/order-history")
+
+
+
+
+@api_view(["POST"])
+def payment_fail(request):
+    return redirect(f"{FRONTEND_URL}/order-history")

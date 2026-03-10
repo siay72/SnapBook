@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-vv!w0q8pcf4q9mhb^5s!i5c0^pkze##55q91(c)a57tb_ztgo4'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 CORS_ALLOW_ALL_ORIGINS = True
 ALLOWED_HOSTS = [".vercel.app", '127.0.0.1']
@@ -150,6 +150,9 @@ CORS_ALLOWED_ORIGINS = [
     "https://snap-book-frontend.vercel.app",
     
 ]
+
+FRONTEND_URL = config('FRONTEND_URL')
+BACKEND_URL = config('BACKEND_URL')
 
 
 LANGUAGE_CODE = 'en-us'
