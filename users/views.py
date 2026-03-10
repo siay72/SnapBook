@@ -4,9 +4,36 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
-
 from users.models import User
+from rest_framework.permissions import IsAdminUser
 from users.serializers import UserProfileSerializer
+
+
+class AdminUserViewSet(ModelViewSet):
+
+    queryset = User.objects.all()
+    serializer_class = UserProfileSerializer
+    permission_classes = [IsAdminUser]
+
+    def destroy(self, request, *args, **kwargs):
+
+        user = self.get_object()
+
+        if user == request.user:
+            return Response(
+                {"error": "You cannot delete yourself"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.delete()
+
+        return Response(
+            {"message": "User deleted successfully"},
+            status=status.HTTP_200_OK
+        )
+
+
+
 
 
 class UserProfileView(ModelViewSet):

@@ -1,26 +1,27 @@
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
-from posts.models import Post,  Comment
-from posts.serializers import PostSerializer, CommentSerializer, EmptySerializer
+from posts.models import Payment, Post,  Comment
+from posts.serializers import PostSerializer, CommentSerializer, EmptySerializer, PaymentSerializer
 from rest_framework import serializers
 from posts.permissions import IsCommentAuthorOrReadOnly
 from rest_framework.filters import SearchFilter
-from posts.paginations import DefaultPagination
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework.decorators import api_view
+from sslcommerz_lib import SSLCOMMERZ 
 
 
 class PostViewSet(ModelViewSet):
     serializer_class = PostSerializer
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     filter_backends = [SearchFilter]
     search_fields = ['caption', 'user__email', 'user__first_name', 'user__last_name']
-    pagination_class = DefaultPagination
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -82,15 +83,23 @@ class PostViewSet(ModelViewSet):
     )
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
+    
 
-    def perform_update(self, serializer):
+    def partial_update(self, request, *args, **kwargs):
         post = self.get_object()
 
-        if not (self.request.user.is_staff or self.request.user.is_superuser):
-            if post.user != self.request.user:
-                raise serializers.ValidationError("You do not have permission to edit this post.")
+        # Admin can edit everything
+        if request.user.is_staff or request.user.is_superuser:
+            return super().partial_update(request, *args, **kwargs)
 
-        serializer.save()
+        # Owner can edit their post
+        if post.user == request.user:
+            return super().partial_update(request, *args, **kwargs)
+
+        return Response(
+            {"detail": "You do not have permission to edit this post."},
+            status=status.HTTP_403_FORBIDDEN
+        )
 
     @swagger_auto_schema(
         operation_summary="Delete a post",
@@ -234,10 +243,16 @@ class MyPostViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Post.objects.filter(user=self.request.user)\
-            .select_related('user')\
+        user = self.request.user
+
+        queryset = Post.objects.select_related('user')\
             .prefetch_related('likes', 'unlikes', 'comments')\
             .order_by('-created_at')
+
+        if user.is_staff or user.is_superuser:
+            return queryset
+
+        return queryset.filter(user=user)
 
     @swagger_auto_schema(
         operation_summary="Retrieve logged-in user posts",
@@ -351,3 +366,80 @@ class MyPostViewSet(ModelViewSet):
             "total_likes": post.likes.count(),
             "total_unlikes": post.unlikes.count()
         }, status=status.HTTP_200_OK)
+    
+
+
+@api_view(['POST'])
+def initiate_payment(request):
+    user = request.user
+    ammount = request.data.get("amount")
+    order_id = request.data.get("order_id")
+    settings = { 'store_id': 'snapb69aef72da647b',
+                 'store_pass': 'snapb69aef72da647b@ssl', 
+                 'issandbox': True }
+    sslcz = SSLCOMMERZ(settings)
+    post_body = {}
+    post_body['total_amount'] = ammount
+    post_body['currency'] = "BDT"
+    post_body['tran_id'] = f"txn_{order_id}"
+    post_body['success_url'] = "https://snap-book.vercel.app/api/payment/success"
+    post_body['fail_url'] = "https://snap-book-frontend.vercel.app/dashboard/payment-failure"
+    post_body['cancel_url'] = "https://snap-book-frontend.vercel.app/dashboard/payment-canceled"
+    post_body['emi_option'] = 0
+    post_body['cus_name'] = f"{user.first_name} {user.last_name}"
+    post_body['cus_email'] = user.email
+    post_body['cus_phone'] = user.phone_number
+    post_body['cus_add1'] = "House 123, Road 45"
+    post_body['cus_city'] = user.location
+    post_body['cus_country'] = "Bangladesh"
+    post_body['shipping_method'] = "NO"
+    post_body['multi_card_name'] = ""
+    post_body['num_of_item'] = 1
+    post_body['product_name'] = "SnapBook Premium Subscription"
+    post_body['product_category'] = "Test Category"
+    post_body['product_profile'] = "general"
+
+
+    response = sslcz.createSession(post_body) # API response
+ 
+
+    if response.get("status") == "SUCCESS":
+        return Response({"payment_url": response["GatewayPageURL"]}, status=status.HTTP_200_OK)
+    
+    return Response({"error": "Failed to create payment session."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+    
+
+
+@api_view(["POST"])
+def payment_success(request):
+
+    tran_id = request.data.get("tran_id")
+    amount = request.data.get("amount")
+    payment_method = request.data.get("card_type")
+
+    order_id = tran_id.replace("txn_", "")
+
+    Payment.objects.create(
+        user=request.user,
+        order_id=order_id,
+        transaction_id=tran_id,
+        amount=amount,
+        payment_method=payment_method,
+        status="verified"
+    )
+
+    return Response({"message": "Payment recorded successfully"})
+
+
+
+class PaymentHistoryViewSet(ReadOnlyModelViewSet):
+
+    serializer_class = PaymentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+
+        return Payment.objects.filter(user=self.request.user).order_by("-created_at")

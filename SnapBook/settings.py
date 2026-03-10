@@ -186,6 +186,8 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
     "AUTH_HEADER_TYPES": ("JWT",),
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
 }
 
 
@@ -220,6 +222,7 @@ DJOSER = {
         "user": "users.serializers.UserSerializer",
         'user_create': 'users.serializers.UserCreateSerializer',
         'current_user': 'users.serializers.UserSerializer',
+        "token_create": "users.serializers.CustomTokenCreateSerializer",
     }
 }
 

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Post, Comment
+from .models import Payment, Post, Comment
 from decouple import config
 
 
@@ -32,6 +32,8 @@ class CommentSerializer(serializers.ModelSerializer):
 class PostSerializer(serializers.ModelSerializer):
 
     user_profile_picture = serializers.SerializerMethodField()
+    user_id = serializers.IntegerField(source="user.id", read_only=True)
+
     # Like / Unlike counters
     total_likes = serializers.SerializerMethodField()
     total_unlike = serializers.SerializerMethodField()
@@ -57,6 +59,7 @@ class PostSerializer(serializers.ModelSerializer):
         model = Post
         fields = [
             'id',
+            'user_id',
             'user_email',
             "user_profile_picture",
             'user_first_name',
@@ -112,3 +115,10 @@ class PostSerializer(serializers.ModelSerializer):
             return obj.unlikes.filter(id=request.user.id).exists()
 
         return False
+    
+
+class PaymentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Payment
+        fields = ['id', 'user', 'order_id', 'transaction_id', 'created_at', 'updated_at',]
