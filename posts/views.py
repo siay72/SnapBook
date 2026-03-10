@@ -1,6 +1,6 @@
 from django.shortcuts import redirect
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
-from rest_framework.decorators import action
+from rest_framework.decorators import action, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
@@ -415,6 +415,7 @@ def initiate_payment(request):
     
 
 @api_view(["POST"])
+@permission_classes([AllowAny])
 def payment_success(request):
 
     tran_id = request.POST.get("tran_id")
@@ -453,6 +454,7 @@ class PaymentHistoryViewSet(ReadOnlyModelViewSet):
 
 
 @api_view(["POST"])
+@permission_classes([AllowAny])
 def payment_cancel(request):
     return redirect(f"{FRONTEND_URL}/order-history")
 
@@ -460,5 +462,6 @@ def payment_cancel(request):
 
 
 @api_view(["POST"])
+@permission_classes([AllowAny])
 def payment_fail(request):
     return redirect(f"{FRONTEND_URL}/order-history")
