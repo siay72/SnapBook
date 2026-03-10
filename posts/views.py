@@ -376,6 +376,10 @@ def initiate_payment(request):
     user = request.user
     amount = request.data.get("amount")
     order_id = request.data.get("order_id")
+
+    if not amount or not order_id:
+        return Response({"error": "Amount and order_id required"}, status=400)
+    
     # CREATE PAYMENT FIRST
     Payment.objects.create(
         user=user,
@@ -389,7 +393,7 @@ def initiate_payment(request):
                  'issandbox': True }
     sslcz = SSLCOMMERZ(settings)
     post_body = {}
-    post_body['total_amount'] = ammount
+    post_body['total_amount'] = amount
     post_body['currency'] = "BDT"
     post_body['tran_id'] = f"txn_{order_id}"
     post_body['success_url'] = f"{BACKEND_URL}/api/payment/success/"
