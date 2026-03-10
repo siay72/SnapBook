@@ -374,8 +374,16 @@ class MyPostViewSet(ModelViewSet):
 @api_view(['POST'])
 def initiate_payment(request):
     user = request.user
-    ammount = request.data.get("amount")
+    amount = request.data.get("amount")
     order_id = request.data.get("order_id")
+    # CREATE PAYMENT FIRST
+    Payment.objects.create(
+        user=user,
+        order_id=order_id,
+        amount=amount,
+        status="pending"
+    )
+
     settings = { 'store_id': 'snapb69aef72da647b',
                  'store_pass': 'snapb69aef72da647b@ssl', 
                  'issandbox': True }
@@ -424,17 +432,14 @@ def payment_success(request):
 
     order_id = tran_id.replace("txn_", "")
 
-    try:
-        payment = Payment.objects.get(order_id=order_id)
+    payment = Payment.objects.filter(order_id=order_id).first()
 
+    if payment:
         payment.transaction_id = tran_id
         payment.amount = amount
         payment.payment_method = payment_method
         payment.status = "verified"
         payment.save()
-
-    except Payment.DoesNotExist:
-        pass
 
     return redirect(f"{FRONTEND_URL}/order-history")
 
