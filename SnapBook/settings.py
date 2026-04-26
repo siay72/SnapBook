@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'api',
     'users',
     'posts',
+    'friends',
 
 ]
 
@@ -188,7 +189,7 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
-    "AUTH_HEADER_TYPES": ("JWT",),
+    "AUTH_HEADER_TYPES": ("Bearer",),
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
 }
@@ -237,7 +238,7 @@ SWAGGER_SETTINGS = {
             'type': 'apiKey',
             'name': 'Authorization',
             'in': 'header',
-            'description': 'Enter your JWT token in the format: `JWT <your_token>`'
+            'description': 'Enter your Bearer token in the format: `Bearer <your_token>`'
         }
     },
     'STATIC_URL': '/static/',

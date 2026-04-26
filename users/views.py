@@ -7,7 +7,7 @@ from drf_yasg.utils import swagger_auto_schema
 from users.models import User
 from rest_framework.permissions import IsAdminUser
 from users.serializers import UserProfileSerializer
-
+from rest_framework.decorators import action
 
 class AdminUserViewSet(ModelViewSet):
 
@@ -43,7 +43,20 @@ class UserProfileView(ModelViewSet):
     parser_classes = [MultiPartParser, FormParser]
 
     def get_queryset(self):
-        return User.objects.filter(id=self.request.user.id)
+        return User.objects.all()
+    
+    def get_object(self):
+        pk = self.kwargs.get("pk")
+
+        if not pk:
+            return self.request.user
+
+        return User.objects.get(pk=pk)
+    
+    @action(detail=False, methods=["get"], url_path="me")
+    def me(self, request):
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
 
     @swagger_auto_schema(
         operation_summary="Get current user profile",

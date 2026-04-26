@@ -29,8 +29,11 @@ class CommentSerializer(serializers.ModelSerializer):
             'created_at'
         ]
     def get_user_profile_picture(self, obj):
-        if obj.user.profile_picture:
-            return obj.user.profile_picture.url
+        try:
+            if hasattr(obj.user, "profile_picture") and obj.user.profile_picture:
+                return obj.user.profile_picture.url
+        except:
+            pass
         return None
 
 
@@ -84,8 +87,11 @@ class PostSerializer(serializers.ModelSerializer):
             'comments'
         ]
     def get_user_profile_picture(self, obj):
-        if obj.user.profile_picture:
-            return obj.user.profile_picture.url
+        try:
+            if hasattr(obj.user, "profile_picture") and obj.user.profile_picture:
+                return obj.user.profile_picture.url
+        except:
+            pass
         return None
 
     # Like count

@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 from SnapBook.settings import FRONTEND_URL, BACKEND_URL
+from friends.models import Notification
 from posts.models import Payment, Post,  Comment
 from posts.serializers import PostSerializer, CommentSerializer, EmptySerializer, PaymentSerializer
 from rest_framework import serializers
@@ -27,13 +28,15 @@ class PostViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Post.objects.all()\
-            .select_related('user')\
-            .prefetch_related(
-                'likes',
-                'unlikes',
-                Prefetch('comments', queryset=Comment.objects.select_related('user'))
-            )\
+        user_id = self.request.query_params.get("user_id")
+
+        queryset = Post.objects.all()
+
+        if user_id:
+            queryset = queryset.filter(user_id=user_id)
+
+        return queryset.select_related('user')\
+            .prefetch_related('likes', 'unlikes', 'comments')\
             .order_by('-created_at')
 
     def get_permissions(self):
@@ -132,11 +135,21 @@ class PostViewSet(ModelViewSet):
         post.unlikes.remove(user)
         post.likes.add(user)
 
+        # Notification
+        if post.user != user:
+            Notification.objects.create(
+                sender=user,
+                receiver=post.user,
+                notification_type="like",
+                message=f"{user.first_name} liked your post"
+            )
+
         return Response({
             "message": "Post liked successfully.",
             "total_likes": post.likes.count(),
             "total_unlikes": post.unlikes.count(),
         }, status=status.HTTP_200_OK)
+
 
     @swagger_auto_schema(
         operation_summary="Unlike a post",
@@ -209,10 +222,23 @@ class CommentViewSet(ModelViewSet):
         return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
-        serializer.save(
-            user=self.request.user,
-            post_id=self.kwargs.get('post_pk')
+        post_id = self.kwargs.get('post_pk')
+        post = Post.objects.get(id=post_id)
+
+        comment = serializer.save(
+            user = self.request.user,
+            post_id = post_id
         )
+        # Notification
+        if post.user != self.request.user:
+            Notification.objects.create(
+                sender=self.request.user,
+                receiver=post.user,
+                notification_type="comment",
+                message=f"{self.request.user.email} commented on your post",
+                reference_id= post.id
+            )
+
 
     @swagger_auto_schema(
         operation_summary="Update a comment",
